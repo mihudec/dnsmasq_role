@@ -1,2 +1,11 @@
 ---
 # tasks file for dnsmasq
+- name: Template Zones
+  template:
+    src: 'zone.j2'
+    dest: "{{ dnsmasq_config_folder }}/{{ zone.zone }}.conf"
+  loop: "{{ dnsmasq_zones }}"
+  loop_control:
+    label: "{{ zone.zone }}"
+  vars:
+    zone: "{{ item }}"

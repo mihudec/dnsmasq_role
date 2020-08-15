@@ -1,0 +1,24 @@
+### Zone {{ zone.zone }}
+
+### Host Records
+{% for record in zone.records %}
+{% if record.address is defined %}
+host-record={{ record.name }}.{{ zone.zone }},{{ record.name }},{{ record.address }}
+{% endif %}
+{% endfor %}
+
+### CNAME Records
+{% for record in zone.records %}
+{% if record.cnames is defined and record.cnames is iterable and record.cnames | length > 0%}
+cname={% for cname in record.cnames %}{{ cname }}.{{ zone.zone }},{% endfor %}{{ record.name }}.{{ zone.zone }}
+{% endif %}
+{% endfor %}
+
+### PTR Records
+{% for record in zone.records %}
+{% if record.ptr_records is defined %}
+{% for ptr_address in record.ptr_records %}
+ptr-record={{ ptr_address | ipaddr('revdns') }},{{ record.name }}.{{ zone.zone }}
+{% endfor %}
+{% endif %}
+{% endfor %}
