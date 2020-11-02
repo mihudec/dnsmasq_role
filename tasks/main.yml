@@ -9,3 +9,5 @@
     label: "{{ zone.zone }}"
   vars:
     zone: "{{ item }}"
+  notify: Restart dnsmasq
+
