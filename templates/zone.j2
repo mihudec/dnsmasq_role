@@ -1,4 +1,14 @@
 ### Zone {{ zone.zone }}
+domain={{ zone.zone }}
+{% if zone.local is defined and zone.local is sameas true %}
+local=/{{ zone.zone }}/
+{% endif %}
+{% if zone.domain_needed is defined and zone.domain_needed is sameas true %}
+domain-needed
+{% endif %}
+{% if zone.bogus_priv is defined and zone.bogus_priv is sameas true %}
+bogus-priv
+{% endif %}
 
 ### Host Records
 {% for record in zone.records %}
