@@ -1,0 +1,56 @@
+all:
+  hosts:
+    localhost:
+      dnsmasq_instances:
+        system:
+          name: system
+          config_dir: "{{ playbook_dir }}/outputs"
+          config_dir_owner: root
+          config_dir_group: root
+          config_dir_mode: '0777'
+          config_file_name: dnsmasq.conf
+          config_file_owner: 'root'
+          config_file_group: 'root'
+          config_file_mode: '0777'
+          config:
+            global_options:
+              bogus_priv: true
+              no_resolve: true
+              no_hosts: true
+              bind_interfaces: false
+              listen_addresses:
+                - 192.168.0.254
+                - 192.168.1.254
+              port: 53
+              servers:
+                - ip: 1.1.1.1
+                  domains: []
+                - ip: 8.8.8.8
+                  domains: ['google.com', google.cz] 
+                - ip: 9.9.9.9
+                - ip: 192.168.0.100
+                  networks:
+                    - 192.168.0.0/24
+                  domains: ['home.local']
+                - ip: 192.168.1.100
+                  networks:
+                    - 192.168.1.0/24
+                  domains: ['home1.local']
+            zones:
+              - name: example.com
+                networks:
+                  - 192.2.0.0/24
+                local: true
+                hosts:
+                  - name: host-01
+                    ip: 192.2.0.1
+                    aliases:
+                      - host1
+                  - name: host-02
+                    ip: 192.2.0.2
+                    aliases:
+                      - host2
+  vars:
+    ansible_user: mhudec
+    ansible_become: true
+    dnsmasq_backup_config: false

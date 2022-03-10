@@ -1,0 +1,40 @@
+{% from '_macros.j2' import sectionMacro with context %}
+{% from '_macros.j2' import isTrue with context %}
+{% from '_macros.j2' import multiOption with context %}
+{% from '_macros.j2' import serverMacro,revServerMacro with context %}
+{{ sectionMacro(text='Dnsmasq\'s global config') }}
+{% set go=config.global_options %}
+{% if isTrue(go.bogus_priv) %}
+bogus-priv
+{% endif %}
+{% if isTrue(go.no_resolve) %}
+no-resolve
+{% endif %}
+{% if isTrue(go.no_hosts) %}
+no-hosts
+{% endif %}
+{% if isTrue(go.bind_interfaces) %}
+bind-interfaces
+{% endif %}
+
+{% if go.listen_addresses | default(none) is not none %}
+{{ multiOption(value=go.listen_addresses, option_name='listen-address') -}}
+{% endif %}
+{% if go.port | default(none) is not none %}
+port={{ go.port }}
+{% endif %}
+{% if go.servers | default(none) is not none and (go.servers | length > 0) %}
+{%   for server in go.servers %}
+{%     if server.networks | default(none) is not none %}
+{{ revServerMacro(server) }}
+{%-     else -%}
+{{ serverMacro(server) }}
+{%     endif %}
+{%   endfor %}
+{% endif %}
+
+{% if config.zones | default(none) is not none %}
+{%   for zone in config.zones %}
+{%     include 'dnsmasq_zone.j2' %}
+{%   endfor %}
+{% endif %}

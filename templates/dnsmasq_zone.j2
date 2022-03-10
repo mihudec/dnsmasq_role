@@ -1,0 +1,29 @@
+{% from '_macros.j2' import sectionMacro with context %}
+{{ sectionMacro(text='Zone ' + zone.name) }}
+domain={{ zone.name }}
+{%- if zone.networks | default(none) is not none and (zone.networks | length > 0) -%}
+,
+{%-   for network in zone.networks -%}
+{{ network }}
+{%-      if not loop.last %},{% endif -%}
+{%-   endfor -%}
+{%- endif -%}
+{%- if zone.local | default(false) is sameas true -%}
+,local
+{%- endif %}
+
+
+### Host Records
+{% for host in zone.hosts %}
+{%   if host.ip is defined %}
+host-record={{ host.name }}.{{ zone.name }},{{ host.ip }}
+{%   endif %}
+{% endfor %}
+
+
+### CNAME Records
+{% for host in zone.hosts %}
+{%   if host.aliases is defined and host.aliases | length > 0 %}
+cname={% for alias in host.aliases %}{{ alias }}.{{ zone.name }},{% endfor %}{{ host.name }}.{{ zone.name }}
+{%   endif %}
+{% endfor %}
