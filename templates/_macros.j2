@@ -1,0 +1,54 @@
+{% macro sectionMacro(text, character='#', width=50) %}
+{%   if not (OMIT_SECTIONS | default(false)) %}
+{{ character * width }}
+{%   for line in text.split('\n') %}
+{{ character }}{{ line.center(width - 2) }}{{ character }}
+{%   endfor %}
+{{ character * width -}}
+{%   endif %}
+{% endmacro %}
+
+{% macro isTrue(value) %}
+{% if value | default(none) is not none and value is sameas true %}true{% else %}false{% endif %}
+{% endmacro %}
+
+{% macro multiOption(value,option_name) %}
+{%   if value is iterable %}
+{%     if value is string %}
+{{ option_name }}={{ value }}
+{%     elif value is mapping %}
+{%     else %}
+{%       for single_value in value %}
+{{ option_name }}={{ single_value }}
+{%       endfor %}
+{%     endif %}
+{%   endif %}
+{% endmacro %}
+
+{% macro serverHostMacro(server) -%}
+{{ server.ip }}
+{%- endmacro %}
+
+{% macro serverMacro(server) %}
+server=
+{%-   if server.domains | default(none) is not none and (server.domains | length > 0) -%}
+/
+{%-     for domain in server.domains -%}
+{{ domain }}
+{%-     if not loop.last %}/{% endif %}
+{%-     endfor -%}
+/
+{%-   endif %}
+{{ serverHostMacro(server) }}
+{%- endmacro %}
+
+{% macro revServerMacro(server) %}
+{%-   if server.domains | default(none) is not none and (server.domains | length > 0) -%}
+{{ serverMacro(server) }}
+{%    endif %}
+{%   if server.networks | default(none) is not none and (server.networks | length > 0) -%}
+{%     for network in server.networks %}
+rev-server={{ network }},{{ serverHostMacro(server) }}
+{%     endfor %}
+{%   endif %}
+{% endmacro %}

@@ -1,13 +1,74 @@
 ---
 # tasks file for dnsmasq
-- name: Template Zones
-  template:
-    src: 'zone.j2'
-    dest: "{{ dnsmasq_config_folder }}/{{ zone.zone }}.conf"
-  loop: "{{ dnsmasq_zones }}"
-  loop_control:
-    label: "{{ zone.zone }}"
-  vars:
-    zone: "{{ item }}"
-  notify: Restart dnsmasq
+# - name: Prepare Config Directories
+#   ansible.builtin.file:
+#     path: "{{ dnsmasq_instance.config_dir }}"
+#     owner: "{{ dnsmasq_instance.config_dir_owner | default(omit) }}"
+#     group: "{{ dnsmasq_instance.config_dir_group | default(omit) }}"
+#     mode: "{{ dnsmasq_instance.config_dir_mode | default(omit) }}"
+#     state: directory
+#   loop: "{{ dnsmasq_instances | dict2items }}"
+#   loop_control:
+#     label: "{{ instance_id }}"
+#   vars:
+#     instance_id: "{{ item.key }}"
+#     dnsmasq_instance: "{{ item.value }}"
+#     config_dir: "{{ dnsmasq_instance.config_dir }}"
+    
 
+# - name: Template Instance Global Config
+#   ansible.builtin.template:
+#     src: 'dnsmasq.conf.j2'
+#     dest: "{{ config_dir }}/dnsmasq.conf"
+#     owner: "{{ dnsmasq_instance.config_file_owner | default(omit) }}"
+#     group: "{{  dnsmasq_instance.config_file_group | default(omit) }}"
+#     mode: "{{  dnsmasq_instance.config_file_mode | default(omit) }}"
+#     backup: "{{ dnsmasq_backup_config }}"
+#   loop: "{{ dnsmasq_instances | dict2items }}"
+#   loop_control:
+#     label: "{{ instance_id }}"
+#   register: dnsmasq_config_template_result
+#   vars:
+#     instance_id: "{{ item.key }}"
+#     dnsmasq_instance: "{{ item.value }}"
+#     config_dir: "{{ dnsmasq_instance.config_dir }}"
+#     config: "{{ dnsmasq_instance.config }}"
+#   when: 
+#     - config.global_options is defined
+#   notify: restart_dnsmasq
+
+- name: Set Results Dict
+  ansible.builtin.set_fact:
+    dnsmasq_results_dict: |
+      {
+        {% for instance_id in dnsmasq_instances.keys() %}
+        "{{ instance_id }}": {
+          "global": {
+            "changed": false
+          },
+          "zonefiles": {
+            "changed": false
+          }
+        },
+        {% endfor %}
+      }
+
+- name: DEBUG
+  ansible.builtin.debug:
+    msg: "{{ dnsmasq_results_dict }}"
+
+- name: Include Instance Tasks
+  ansible.builtin.include_tasks:
+    file: instance.yml
+  loop: "{{ dnsmasq_instances | dict2items }}"
+  loop_control:
+    loop_var: instance
+    label: "{{ instance.key }}"
+  vars:
+    instance_id: "{{ instance.key }}"
+    instance_data: "{{ instance.value }}"
+
+
+- name: DEBUG
+  ansible.builtin.debug:
+    msg: "{{ dnsmasq_results_dict }}"

@@ -1,12 +1,19 @@
 ---
-# defaults file for dnsmasq
-dnsmasq_config_folder: '/etc/dnsmasq.d/'
-dnsmasq_zones:
-  - zone: example.com
-    records:
-      - name: test
-        address: 1.2.3.4
-        cnames:
-          - test2
-        ptr_records: 
-          - 5.6.7.8
+dnsmasq_containerized: false
+dnsmasq_container_name: Null
+dnsmasq_config_dir: '/etc'
+dnsmasq_config_subdir: '/etc/dnsmasq.d'
+dnsmasq_config_dir_owner: root
+dnsmasq_config_dir_group: root
+dnsmasq_config_dir_mode: '0640'
+dnsmasq_config_file_name: 'dnsmasq.conf'
+dnsmasq_config_file_owner: root
+dnsmasq_config_file_group: root
+dnsmasq_config_file_mode: '0640'
+dnsmasq_separate_zonefiles: false
+
+dnsmasq_backup_config: true
+dnsmasq_hadle_service_restart: true
+
+dnsmasq_options: {}
+dnsmasq_instances: {}

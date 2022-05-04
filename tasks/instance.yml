@@ -1,0 +1,76 @@
+- name: "Prepare Config Directory for Global Config / Instance {{ instance_id }}"
+  ansible.builtin.file:
+    path: "{{ instance_data.config_dir }}"
+    owner: "{{ instance_data.config_dir_owner | default(omit) }}"
+    group: "{{ instance_data.config_dir_group | default(omit) }}"
+    mode: "{{ instance_data.config_dir_mode | default(omit) }}"
+    state: directory
+
+
+- name: "Template Global Config / Instance {{ instance_id }}"
+  ansible.builtin.template:
+    src: 'dnsmasq.conf.j2'
+    dest: "{{ instance_data.config_dir }}/dnsmasq.conf"
+    owner: "{{ instance_data.config_file_owner | default(omit) }}"
+    group: "{{  instance_data.config_file_group | default(omit) }}"
+    mode: "{{  instance_data.config_file_mode | default(omit) }}"
+  vars: 
+    config: "{{ instance_data.config }}"
+  when:
+    - instance_data.config.global_options is defined
+  register: dnsmasq_result_global_config
+  notify: restart_dnsmasq
+
+- name: "Update Results Dict / Instance {{ instance_id }}"
+  ansible.builtin.set_fact:
+   dnsmasq_results_dict: "{{ dnsmasq_results_dict | combine(update_dict, recursive=True) }}"
+  vars: 
+    update_dict: |
+      {
+        "{{ instance_id }}": {
+          "global": {
+            "changed": {{ dnsmasq_result_global_config.changed }}
+          }
+        }
+      }
+
+
+- name: "Zonefiles Block / Instance {{ instance_id }}"
+  block:
+    - name: "Prepare Config Directory for Zonefiles / Instance {{ instance_id }}"
+      ansible.builtin.file:
+        path: "{{ instance_data.config_subdir }}"
+        owner: "{{ instance_data.config_dir_owner | default(omit) }}"
+        group: "{{ instance_data.config_dir_group | default(omit) }}"
+        mode: "{{ instance_data.config_dir_mode | default(omit) }}"
+        state: directory
+
+    - name: "Template Zone Files / Instance {{ instance_id }}"
+      ansible.builtin.template:
+        src: 'dnsmasq_zone.j2'
+        dest: "{{ instance_data.config_subdir }}/{{ zone.name }}.conf"
+        owner: "{{ instance_data.config_file_owner | default(omit) }}"
+        group: "{{  instance_data.config_file_group | default(omit) }}"
+        mode: "{{  instance_data.config_file_mode | default(omit) }}"
+      loop: "{{ instance_data.config.zones }}"
+      loop_control:
+        loop_var: zone
+        label: "Zone: {{ zone.name }}"
+      register: dnsmasq_result_zonefiles_config
+      notify: restart_dnsmasq
+
+    - name: "Update Results Dict / Instance {{ instance_id }}"
+      ansible.builtin.set_fact:
+        dnsmasq_results_dict: "{{ dnsmasq_results_dict | combine(update_dict, recursive=True) }}"
+      vars: 
+        update_dict: |
+          {
+            "{{ instance_id }}": {
+              "zonefiles": {
+                "changed": {{ dnsmasq_result_zonefiles_config.changed }}
+              }
+            }
+          }
+
+  when:
+    - instance_data.separate_zonefiles | default(dnsmasq_separate_zonefiles) is sameas true
