@@ -1,19 +1,18 @@
 {% from '_macros.j2' import sectionMacro with context %}
-{% from '_macros.j2' import isTrue with context %}
 {% from '_macros.j2' import multiOption with context %}
 {% from '_macros.j2' import serverMacro,revServerMacro with context %}
 {{ sectionMacro(text='Dnsmasq\'s global config') }}
 {% set go=config.global_options %}
-{% if isTrue(go.bogus_priv) %}
-bogus-priv
+{% if go.bogus_priv | default(false) is sameas true %}
+bogus-priv 
 {% endif %}
-{% if isTrue(go.no_resolve) %}
-no-resolve
+{% if go.no_resolv | default(false) is sameas true %}
+no-resolv
 {% endif %}
-{% if isTrue(go.no_hosts) %}
+{% if go.no_hosts | default(false) is sameas true %}
 no-hosts
 {% endif %}
-{% if isTrue(go.bind_interfaces) %}
+{% if go.bind_interfaces | default(false) is sameas true %}
 bind-interfaces
 {% endif %}
 
@@ -34,7 +33,9 @@ port={{ go.port }}
 {% endif %}
 
 {% if config.zones | default(none) is not none %}
-{%   for zone in config.zones %}
-{%     include 'dnsmasq_zone.j2' %}
-{%   endfor %}
+{%   if instance_data.separate_zonefiles | default(dnsmasq_separate_zonefiles) is sameas false %}
+{%     for zone in config.zones %}
+{%       include 'dnsmasq_zone.j2' %}
+{%     endfor %}
+{%   endif %}
 {% endif %}

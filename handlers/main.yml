@@ -4,5 +4,32 @@
   systemd:
     name: dnsmasq
     state: restarted
+
+- name: Restart dnsmasq - Custom Command
+  shell:
+    cmd: "{{ dnsmasq_instances[instance_id].instance_restart_command }}"
+  loop: "{{ dnsmasq_results_dict | dict2items }}"
+  loop_control:
+    label: "{{ instance_id }}"
+  vars:
+    instance_id: "{{ item.key }}"
+    changed: "{{ item.value['global'].changed or item.value['zonefile'].changed }}"
+  when:
+    - dnsmasq_instances[instance_id].instance_restart_command is defined
   listen: restart_dnsmasq
+
+- name: Restart dnsmasq - Systemd
+  ansible.builtin.systemd:
+    name: dnsmasq
+    state: restarted
+  loop: "{{ dnsmasq_results_dict | dict2items }}"
+  loop_control:
+    label: "{{ instance_id }}"
+  vars:
+    instance_id: "{{ item.key }}"
+    changed: "{{ item.value['global'].changed or item.value['zonefile'].changed }}"
+  when:
+    - dnsmasq_instances[instance_id].instance_restart_command is not defined
+  listen: restart_dnsmasq
+
 

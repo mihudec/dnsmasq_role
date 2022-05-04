@@ -1,29 +1,53 @@
 {% from '_macros.j2' import sectionMacro with context %}
+{% from '_macros.j2' import serverMacro,revServerMacro with context %}
 {{ sectionMacro(text='Zone ' + zone.name) }}
+
+{% if zone.local | default(false) is sameas true %}
 domain={{ zone.name }}
-{%- if zone.networks | default(none) is not none and (zone.networks | length > 0) -%}
-,
-{%-   for network in zone.networks -%}
-{{ network }}
-{%-      if not loop.last %},{% endif -%}
-{%-   endfor -%}
-{%- endif -%}
-{%- if zone.local | default(false) is sameas true -%}
-,local
-{%- endif %}
+local=/{{ zone.name }}/
+{% endif %}
+{% if zone.networks | default(none) is not none and (zone.networks | length > 0) %}
+{%   for network in zone.networks %}
+local=/{{ network | ipaddr('revdns')}}/
+{%   endfor %}
+{% endif %}
 
+{% if zone.servers is defined %}
+### Servers
+{%   for server in zone.servers %}
+{%     set server = server | combine({'domains': [zone.name]}) %}
+{%     if server.networks | default(none) is not none %}
+{{ revServerMacro(server) }}
+{%-     else -%}
+{{ serverMacro(server) }}
+{%     endif %}
+{%   endfor %}
+{% endif %}
 
+{% if zone.hosts is defined %}
 ### Host Records
-{% for host in zone.hosts %}
-{%   if host.ip is defined %}
+{%   for host in zone.hosts %}
+{%     if host.ip is defined %}
 host-record={{ host.name }}.{{ zone.name }},{{ host.ip }}
-{%   endif %}
-{% endfor %}
+{%     endif %}
+{%   endfor %}
 
 
 ### CNAME Records
-{% for host in zone.hosts %}
-{%   if host.aliases is defined and host.aliases | length > 0 %}
+{%   for host in zone.hosts %}
+{%     if host.aliases is defined and host.aliases | length > 0 %}
 cname={% for alias in host.aliases %}{{ alias }}.{{ zone.name }},{% endfor %}{{ host.name }}.{{ zone.name }}
-{%   endif %}
-{% endfor %}
+{%     endif %}
+{%   endfor %}
+
+### PTR Records
+{%   for host in zone.hosts %}
+{%     if host.ptr_records is defined %}
+{%       for ptr_address in host.ptr_records %}
+ptr-record={{ ptr_address | ipaddr('revdns') }},{{ host.name }}.{{ zone.name }}
+{%       endfor %}
+{%     endif %}
+{%   endfor %}
+
+
+{% endif %}
